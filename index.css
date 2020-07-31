@@ -1,0 +1,43 @@
+.row {
+    padding: 0;
+    height: 15px;
+    margin-bottom: 1px;
+  }
+  
+  .square {
+    width: 15px;
+    height: 15px;
+    background-color: #ccc;
+    display: block;
+    float: left;
+    margin-right: 1px;
+  }
+  
+  /* red, blue, green, yellow, purple */
+  .square.hasShape.col0, .square.hasNewShape.col0 {
+    background-color: red;
+  }
+  
+  .square.hasShape.col1, .square.hasNewShape.col1 {
+    background-color: blue;
+  }
+  
+  .square.hasShape.col2, .square.hasNewShape.col2 {
+    background-color: green;
+  }
+  
+  .square.hasShape.col3, .square.hasNewShape.col3 {
+    background-color: yellow;
+  }
+  
+  .square.hasShape.col4, .square.hasNewShape.col4 {
+    background-color: purple;
+  }
+  
+  .square.hasShape.col5, .square.hasNewShape.col5 {
+    background-color: cyan;
+  }
+  
+  .square.hasShape.col6, .square.hasNewShape.col6 {
+    background-color: magenta;
+  }

@@ -190,9 +190,28 @@ const GridModule = function(container, width, height) {
   }
 };
 
-const GameModule = function() {
+const GameModule = function(gameContainer) {
     let onNextShape = null;
   let onSwapShape = null;
+  let onScoreChange = null;
+  let container = gameContainer;
+  let divGrid = createDivGrid(container, 10, 20);
+  let action = '';
+  window.addEventListener('keydown', e => {
+    if (e.code === 'ArrowLeft') {
+      action = 'left';
+    } else if (e.code === 'ArrowRight') {
+      action = 'right';
+    } else if (e.code === 'ArrowUp') {
+      action = 'drop';
+    } else if (e.code === 'Space') {
+      action = 'rotate';
+    } else if (e.code === 'ArrowDown') {
+      action = 'down';
+    } else if (e.code === 'KeyC') {
+      action = 'swap';
+    }
+  });
   return {
     grid: clearGrid([], 10, 20),
     shapes: [long, sqr, zz1, zz2, tee, el1, el2],
@@ -201,33 +220,16 @@ const GameModule = function() {
     newShape: null,
     newShapeX: 0,
     newShapeY: 3,
-    container: null,
-    divGrid: [],
+    container: container,
+    divGrid: divGrid,
     downCycle: 0,
     downSpeed: 20,
-    action: '',
+    action: action,
     score: 0,
-    start: function(container) {
-      this.container = container;
-      this.divGrid = createDivGrid(container, 10, 20);
+    start: function() {
       this.nextShape = getNewShape(this.shapes);
       if (onNextShape) { onNextShape(this.nextShape); }
       this.newShape = getNewShape(this.shapes);
-      window.addEventListener('keydown', e => {
-        if (e.code === 'ArrowLeft') {
-          this.action = 'left';
-        } else if (e.code === 'ArrowRight') {
-          this.action = 'right';
-        } else if (e.code === 'ArrowUp') {
-          this.action = 'drop';
-        } else if (e.code === 'Space') {
-          this.action = 'rotate';
-        } else if (e.code === 'ArrowDown') {
-          this.action = 'down';
-        } else if (e.code === 'KeyC') {
-        	this.action = 'swap';
-        }
-      });
       this.gameStep();
       this.renderStep();
     },
@@ -235,25 +237,25 @@ const GameModule = function() {
       this.downCycle = this.downCycle + 1;
       let removeShape = false;
       // handle actions
-      if (this.action && this.newShape) {
-        if (this.action === 'left' && canGoLeft(this.grid, this.newShape, this.newShapeX, this.newShapeY)) {
+      if (action && this.newShape) {
+        if (action === 'left' && canGoLeft(this.grid, this.newShape, this.newShapeX, this.newShapeY)) {
           this.newShapeY = this.newShapeY - 1;
-        } else if (this.action === 'right' && canGoRight(this.grid, this.newShape, this.newShapeX, this.newShapeY)) {
+        } else if (action === 'right' && canGoRight(this.grid, this.newShape, this.newShapeX, this.newShapeY)) {
           this.newShapeY = this.newShapeY + 1;
-        } else if (this.action === 'drop') {
+        } else if (action === 'drop') {
           while (canGoDown(this.grid, this.newShape, this.newShapeX, this.newShapeY)) {
             this.newShapeX = this.newShapeX + 1;
           }
-        } else if (this.action === 'rotate') {
+        } else if (action === 'rotate') {
           const rotated = rotateMatrix(this.newShape);
           if (canGoDown(this.grid, rotated, this.newShapeX - 1, this.newShapeY) &&
             canGoLeft(this.grid, rotated, this.newShapeX, this.newShapeY + 1) &&
             canGoRight(this.grid, rotated, this.newShapeX, this.newShapeY - 1)) {
             this.newShape = rotated;
           }
-        } else if (this.action === 'down') {
+        } else if (action === 'down') {
           this.downCycle += 20;
-        } else if (this.action === 'swap') {
+        } else if (action === 'swap') {
         		let temp = this.newShape;
             this.newShape = this.swappedShape;
             this.swappedShape = temp;
@@ -280,6 +282,7 @@ const GameModule = function() {
               const row = this.grid[this.newShapeX + i];
               if (isFull(row)) {
                 this.score++;
+                if (onScoreChange) { onScoreChange(this.score); }
                 this.grid.splice(this.newShapeX + i, 1);
                 this.grid.unshift([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
               }
@@ -293,7 +296,7 @@ const GameModule = function() {
         }
       }
 
-      this.action = null;
+      action = null;
       setTimeout(() => {
         this.gameStep();
       }, 25);
@@ -331,13 +334,16 @@ const GameModule = function() {
     },
     onSwapShape: (callback) => {
     	onSwapShape = callback;
+    },
+    onScoreChange: (callback) => {
+    	onScoreChange = callback;
     }
   }
 }
 
 const nextGrid = GridModule(nextShapeContainer, 4, 2);
 const swapGrid = GridModule(swapShapeContainer, 4, 2);
-const game = GameModule();
+const game = GameModule(gameContainerDiv);
 game.onSwapShape((shape) => {
 	swapGrid.clear();
     if (shape.length > 2) {
@@ -352,4 +358,4 @@ game.onNextShape((shape) => {
     }
 	nextGrid.mergeShape(shape, 0, 0);
 });
-game.start(gameContainerDiv);
+game.start();

@@ -191,7 +191,7 @@ const GridModule = function(container, width, height) {
 };
 
 const GameModule = function() {
-	let onNextShape = null;
+    let onNextShape = null;
   let onSwapShape = null;
   return {
     grid: clearGrid([], 10, 20),
@@ -340,10 +340,16 @@ const swapGrid = GridModule(swapShapeContainer, 4, 2);
 const game = GameModule();
 game.onSwapShape((shape) => {
 	swapGrid.clear();
+    if (shape.length > 2) {
+        shape = rotateMatrix(shape);
+    }
   swapGrid.mergeShape(shape, 0, 0);
 });
 game.onNextShape((shape) => {
-	nextGrid.clear();
+    nextGrid.clear();
+    if (shape.length > 2) {
+        shape = rotateMatrix(shape);
+    }
 	nextGrid.mergeShape(shape, 0, 0);
 });
 game.start(gameContainerDiv);

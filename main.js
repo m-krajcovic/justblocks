@@ -1,9 +1,61 @@
 // grid = clearGrid([]);
 
-let gameContainerDiv = document.getElementById("gameContainer");
 let counterDiv = document.getElementById("rowCounter");
 let nextShapeContainer = document.getElementById("nextShapeContainer");
 let swapShapeContainer = document.getElementById("swapShapeContainer");
+let c = document.getElementById("myCanvas");
+let ctx = c.getContext("2d");
+
+const colors = ['', 'cyan', 'yellow', 'red', 'green', 'purple', 'orange', 'blue'];
+
+function resetCanvas(canvas, context) {
+    context.fillStyle = 'black';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawTetrisBlock(canvas, context, block_height, block_width, x, y, color) {
+    ctx.beginPath();
+    context.rect(block_height * y, block_width * x, block_width, block_height);
+    context.fillStyle = color;
+    context.fill();
+
+    ctx.beginPath();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+    ctx.moveTo(block_height * y, block_width * x);
+    ctx.lineTo(block_height * y, (block_width * x) + block_width);
+    ctx.lineTo((block_height * y) + block_height , (block_width * x) + block_width);
+    ctx.stroke(); 
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.lineTo((block_height * y) + block_height, block_width * x);
+    ctx.lineTo(block_height * y , block_width * x);   
+    ctx.stroke();
+}
+
+function drawCanvasTetris(canvas, context, grid, newShape, newShapeX, newShapeY) {
+    const block_w = canvas.width / grid[0].length;
+    const block_h = canvas.height / grid.length;
+    for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[i].length; j++) {
+            if (grid[i][j] > 0) {
+                drawTetrisBlock(canvas, context, block_h, block_w, i, j, colors[grid[i][j]]);
+            }
+        }
+    }
+    if (newShape) {
+        for (let i = 0; i < newShape.length; i++) {
+            for (let j = 0; j < newShape[i].length; j++) {
+                if (newShape[i][j] > 0) {
+                    drawTetrisBlock(canvas, context, block_h, block_w, (i + newShapeX), (j + newShapeY), colors[newShape[i][j]]);
+                }
+            }
+        }
+        ctx.beginPath();
+        context.rect(newShapeY * block_w, 0, newShape[0].length * block_w, canvas.height);
+        context.fillStyle = "rgba(255, 255, 255, 0.1)";
+        context.fill();
+    }
+}
 
 const long = [
   [1, 1, 1, 1]
@@ -190,12 +242,10 @@ const GridModule = function(container, width, height) {
   }
 };
 
-const GameModule = function(gameContainer) {
+const GameModule = function() {
     let onNextShape = null;
   let onSwapShape = null;
   let onScoreChange = null;
-  let container = gameContainer;
-  let divGrid = createDivGrid(container, 10, 20);
   let action = '';
   window.addEventListener('keydown', e => {
     if (e.code === 'ArrowLeft') {
@@ -220,10 +270,8 @@ const GameModule = function(gameContainer) {
     newShape: null,
     newShapeX: 0,
     newShapeY: 3,
-    container: container,
-    divGrid: divGrid,
     downCycle: 0,
-    downSpeed: 20,
+    downSpeed: 35,
     action: action,
     score: 0,
     start: function() {
@@ -254,7 +302,7 @@ const GameModule = function(gameContainer) {
             this.newShape = rotated;
           }
         } else if (action === 'down') {
-          this.downCycle += 20;
+          this.downCycle += 40;
         } else if (action === 'swap') {
         		let temp = this.newShape;
             this.newShape = this.swappedShape;
@@ -299,35 +347,17 @@ const GameModule = function(gameContainer) {
       action = null;
       setTimeout(() => {
         this.gameStep();
-      }, 25);
+      }, 10);
     },
     renderStep: function() {
       this._renderGrid();
       setTimeout(() => {
         this.renderStep();
-      }, 50);
+      }, 33);
     },
     _renderGrid: function() {
-      counterDiv.textContent = this.score;
-      for (let i = 0; i < this.grid.length; i++) {
-        for (let j = 0; j < this.grid[i].length; j++) {
-
-          this.divGrid[i][j].classList.remove('hasNewShape', 'hasShape', 'col0', 'col1', 'col2', 'col3', 'col4', 'col5', 'col6');
-
-          if (this.grid[i][j] > 0) {
-            this.divGrid[i][j].classList.add('hasShape', 'col' + (this.grid[i][j] - 1));
-          }
-        }
-      }
-      if (this.newShape) {
-        for (let i = 0; i < this.newShape.length; i++) {
-          for (let j = 0; j < this.newShape[i].length; j++) {
-            if (this.newShape[i][j] > 0) {
-              this.divGrid[this.newShapeX + i][this.newShapeY + j].classList.add('hasNewShape', 'col' + (this.newShape[i][j] - 1));
-            }
-          }
-        }
-      }
+        resetCanvas(c, ctx);
+        drawCanvasTetris(c, ctx, this.grid, this.newShape, this.newShapeX, this.newShapeY);
     },
     onNextShape: (callback) => {
     	onNextShape = callback;
@@ -343,13 +373,16 @@ const GameModule = function(gameContainer) {
 
 const nextGrid = GridModule(nextShapeContainer, 4, 2);
 const swapGrid = GridModule(swapShapeContainer, 4, 2);
-const game = GameModule(gameContainerDiv);
+const game = GameModule();
 game.onSwapShape((shape) => {
 	swapGrid.clear();
     if (shape.length > 2) {
         shape = rotateMatrix(shape);
     }
   swapGrid.mergeShape(shape, 0, 0);
+});
+game.onScoreChange((score) => {
+    counterDiv.textContent = score;
 });
 game.onNextShape((shape) => {
     nextGrid.clear();
